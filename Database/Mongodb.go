@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	constant "github.com/sahildhingraa/invidiousAPI/Constant"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -14,10 +15,7 @@ type MongoInstance struct {
 	Db     *mongo.Database
 }
 
-var mg MongoInstance
-
-const DbName = "invidious-integration"
-const MongoURI = "mongodb://localhost:27017" + DbName
+var Mg MongoInstance
 
 type Video struct {
 	ID             string `json:"id,omitempty" bson:"_id,omitempty"`
@@ -28,16 +26,16 @@ type Video struct {
 }
 
 func Connect() error {
-	client, err := mongo.NewClient(options.Client().ApplyURI(MongoURI))
+	client, err := mongo.NewClient(options.Client().ApplyURI(constant.MongoURI))
 	Error(err)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	err = client.Connect(ctx)
 	Error(err)
-	db := client.Database(DbName)
+	db := client.Database(constant.DbName)
 
-	mg = MongoInstance{
+	Mg = MongoInstance{
 		Client: client,
 		Db:     db,
 	}

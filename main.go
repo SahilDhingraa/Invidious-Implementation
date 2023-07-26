@@ -8,7 +8,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	constant "github.com/sahildhingraa/invidiousAPI/Constant"
+	database "github.com/sahildhingraa/invidiousAPI/Database"
 	playlist "github.com/sahildhingraa/invidiousAPI/Models"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func main() {
@@ -16,11 +18,11 @@ func main() {
 	app.Get("/playlist/:PLID", fetchPlaylist)
 	app.Get("/video/:VID", fetchVideo)
 
-	// if err := database.Connect(); err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err := database.Connect(); err != nil {
+		log.Fatal(err)
+	}
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(constant.PORT))
 }
 
 func fetchPlaylist(c *fiber.Ctx) error {
@@ -77,6 +79,17 @@ func fetchVideo(c *fiber.Ctx) error {
 		}
 	}
 	return c.JSON(data)
+}
+func Video(c *fiber.Ctx) error {
+	query := bson.D{{}}
+	cursor, err := database.Mg.Db.Collection("Videos").Find(c.Context(), query)
+	Error(c, err, err.Error())
+
+	var videos []playlist.Video = make([]playlist.Video, 0)
+	err = cursor.All(c.Context(), &videos)
+	Error(c, err, err.Error())
+
+	return c.JSON(videos)
 }
 
 func Error(c *fiber.Ctx, err error, message string) error {
