@@ -25,6 +25,6 @@ const (
 
 // DATABASE
 const (
-	DbName   = "invidious-implementation"
-	MongoURI = "mongodb://localhost:27017" + DbName
+	DbName           = "invidious-implementation"
+	ConnectionString = "mongodb://localhost:27017/" + DbName
 )

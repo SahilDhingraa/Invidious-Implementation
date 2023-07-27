@@ -9,19 +9,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	constant "github.com/sahildhingraa/invidiousAPI/Constant"
 	database "github.com/sahildhingraa/invidiousAPI/Database"
-	playlist "github.com/sahildhingraa/invidiousAPI/Models"
-	"go.mongodb.org/mongo-driver/bson"
+	model "github.com/sahildhingraa/invidiousAPI/Models"
 )
 
 func main() {
 	app := fiber.New()
 	app.Get("/playlist/:PLID", fetchPlaylist)
 	app.Get("/video/:VID", fetchVideo)
-
-	if err := database.Connect(); err != nil {
-		log.Fatal(err)
-	}
-
+	app.Get("/videos", getAllVideos)
 	log.Fatal(app.Listen(constant.PORT))
 }
 
@@ -37,14 +32,14 @@ func fetchPlaylist(c *fiber.Ctx) error {
 	body, err := ioutil.ReadAll(response.Body)
 	Error(c, err, "Error reading response from the external API")
 
-	var data playlist.Playlist
+	var data model.Playlist
 	err = json.Unmarshal(body, &data)
 	Error(c, err, "Error parsing data to JSON")
 
 	for i := range data.Videos {
 		for _, thumbnail := range data.Videos[i].VideoThumbnail {
 			if thumbnail.Quality == "maxres" {
-				data.Videos[i].VideoThumbnail = []playlist.Thumbnail{thumbnail}
+				data.Videos[i].VideoThumbnail = []model.Thumbnail{thumbnail}
 				break
 			}
 		}
@@ -62,34 +57,28 @@ func fetchVideo(c *fiber.Ctx) error {
 	body, err := ioutil.ReadAll(response.Body)
 	Error(c, err, "Error reading response from the external API")
 
-	var data playlist.Video
+	var data model.Video
 	err = json.Unmarshal(body, &data)
 	Error(c, err, "Error parsing data to JSON")
 
 	for i := range data.VideoThumbnail {
 		if data.VideoThumbnail[i].Quality == "maxres" {
-			data.VideoThumbnail = []playlist.Thumbnail{data.VideoThumbnail[i]}
+			data.VideoThumbnail = []model.Thumbnail{data.VideoThumbnail[i]}
 			break
 		}
 	}
 	for i := range data.FormatStreams {
 		if data.FormatStreams[i].Itag == "22" {
-			data.FormatStreams = []playlist.VideoFormat{data.FormatStreams[i]}
+			data.FormatStreams = []model.VideoFormat{data.FormatStreams[i]}
 			break
 		}
 	}
+	database.InsertVideo(data)
 	return c.JSON(data)
 }
-func Video(c *fiber.Ctx) error {
-	query := bson.D{{}}
-	cursor, err := database.Mg.Db.Collection("Videos").Find(c.Context(), query)
-	Error(c, err, err.Error())
-
-	var videos []playlist.Video = make([]playlist.Video, 0)
-	err = cursor.All(c.Context(), &videos)
-	Error(c, err, err.Error())
-
-	return c.JSON(videos)
+func getAllVideos(c *fiber.Ctx) error {
+	result := database.GetAllVideos()
+	return c.JSON(result)
 }
 
 func Error(c *fiber.Ctx, err error, message string) error {

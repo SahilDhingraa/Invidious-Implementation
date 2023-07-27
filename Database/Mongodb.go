@@ -3,43 +3,43 @@ package database
 import (
 	"context"
 	"log"
-	"time"
 
 	constant "github.com/sahildhingraa/invidiousAPI/Constant"
+	model "github.com/sahildhingraa/invidiousAPI/Models"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type MongoInstance struct {
-	Client *mongo.Client
-	Db     *mongo.Database
-}
+const ColName = "video"
 
-var Mg MongoInstance
+var collection *mongo.Collection
 
-type Video struct {
-	ID             string `json:"id,omitempty" bson:"_id,omitempty"`
-	Title          string `json:"title"`
-	VideoID        string `json:"videoID"`
-	VideoThumbnail string `json:"videoThumbnail"`
-	PlaylistID     string `json:"playlistID"`
-}
-
-func Connect() error {
-	client, err := mongo.NewClient(options.Client().ApplyURI(constant.MongoURI))
+func init() {
+	clientOptions := options.Client().ApplyURI(constant.ConnectionString)
+	client, err := mongo.Connect(context.TODO(), clientOptions)
 	Error(err)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	err = client.Connect(ctx)
+	collection = client.Database(constant.DbName).Collection(ColName)
+}
+func InsertVideo(video model.Video) interface{} {
+	inserted, err := collection.InsertOne(context.Background(), video)
 	Error(err)
-	db := client.Database(constant.DbName)
+	return inserted.InsertedID
+}
+func GetAllVideos() []primitive.M {
+	cursor, err := collection.Find(context.Background(), bson.D{{}})
+	Error(err)
+	defer cursor.Close(context.Background())
 
-	Mg = MongoInstance{
-		Client: client,
-		Db:     db,
+	var Videos []primitive.M
+	for cursor.Next(context.Background()) {
+		var video bson.M
+		err := cursor.Decode(&video)
+		Error(err)
+		Videos = append(Videos, video)
 	}
-	return nil
+	return Videos
 }
 
 func Error(er error) {

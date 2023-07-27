@@ -1,4 +1,6 @@
-package playlist
+package model
+
+import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type Playlist struct {
 	Title      string  `json:"title"`
@@ -7,6 +9,7 @@ type Playlist struct {
 	VideoCount int64   `json:"videoCount"`
 }
 type Video struct {
+	ID primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Title          string        `json:"title"`
 	VideoID        string        `json:"videoId"`
 	VideoThumbnail []Thumbnail   `json:"videoThumbnails"`
