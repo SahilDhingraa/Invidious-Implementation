@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"log"
+	"os"
 
 	constant "github.com/sahildhingraa/invidiousAPI/Constant"
 	model "github.com/sahildhingraa/invidiousAPI/Models"
@@ -17,7 +18,7 @@ const ColName = "video"
 var collection *mongo.Collection
 
 func init() {
-	clientOptions := options.Client().ApplyURI(constant.ConnectionString)
+	clientOptions := options.Client().ApplyURI(os.Getenv("MONGODB_URI"))
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	Error(err)
 	collection = client.Database(constant.DbName).Collection(ColName)
